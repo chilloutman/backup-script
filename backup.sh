@@ -1,18 +1,15 @@
 #!/bin/bash -e
 
-. /etc/backup.conf
+. "$(dirname $0)/include/init.sh"
 
-mkdir -p "$BACKUP_DIR"
-cd "$BACKUP_DIR"
-
-# 1. Create Backup Directory
+# 1. Create backup directory
 
 DESTINATION="backup_$(date '+%FT%H-%M')"
 mkdir "$DESTINATION"
 
-# 2. Create Backup Archives
+# 2. Create backup archives
 
-cd "$DESTINATION"
+cd "$DESTINATION"  || exit
 
 echo "Creating backups in: $(pwd)"
 for SOURCE in "${BACKUP_SOURCES[@]}" ; do
@@ -30,18 +27,7 @@ for SOURCE in "${BACKUP_SOURCES[@]}" ; do
   set +x
 done
 
-# 3. Delete Old Backups
+# 3. Delete old backups
 
-cd "$BACKUP_DIR"
-
-ALL_BACKUPS=()
-while read -r -d '' ; do
-  ALL_BACKUPS+=("$REPLY")
-done < <(find . -maxdepth 1 -type d -name 'backup_*' -print0 | sort -rz)
-
-OLD_BACKUPS=("${ALL_BACKUPS[@]:$BACKUPS_TO_KEEP}")
-OLD_BACKUPS_COUNT="${#OLD_BACKUPS[@]}"
-if (( $OLD_BACKUPS_COUNT > 0 )) ; then
-  echo "Deleting $OLD_BACKUPS_COUNT old backups"
-  rm -r "${OLD_BACKUPS[@]}"
-fi
+cd "$BACKUP_DIR" || exit
+. "$BASEDIR/include/remove-old-backups.sh"
